@@ -10,16 +10,28 @@ services:
   efs-nats:
     image: nats:2.1.8
     container_name: efs-nats
-  efs-producer:
-    command: /efsearch/entrypoint.sh producer
+  efs-db-admin:
+    command: /efsearch/entrypoint.sh db-admin
     build:
       context: ./
       dockerfile: ./backend/Dockerfile
     image: efsearch-backend:latest
+    container_name: efs-db-admin
+    env_file:
+      - ./docker-compose.env
+    depends_on:
+      - efs-db
+  efs-producer:
+    command: /efsearch/entrypoint.sh producer
+    image: efsearch-backend:latest
     container_name: efs-producer
+    depends_on:
+      - efs-nats
   efs-consumer:
     command: /efsearch/entrypoint.sh consumer
     image: efsearch-backend:latest
     container_name: efs-consumer
+    depends_on:
+      - efs-nats
 volumes:
   db: {}

@@ -22,9 +22,9 @@ async def terminate(_, loop):
 async def run(loop):
     await NC.connect(servers=[NATS_HOST], loop=loop)
     await asyncio.sleep(10)
-    for i in range(100):
+    for i in range(10):
         await NC.publish("updates", json.dumps({"symbol": "GOOG", "price": 1200 }).encode())
-    LOGGER.info("Published 100 msgs.")
+    LOGGER.info("Published 10 msgs.")
     await NC.close()
 
 

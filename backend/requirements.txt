@@ -1,1 +1,4 @@
+aiohttp
 asyncio-nats-client
+asyncpg
+peewee
