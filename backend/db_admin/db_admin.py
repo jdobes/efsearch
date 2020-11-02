@@ -26,6 +26,9 @@ async def main():
     if db_version is None:
         LOGGER.info("Initializing DB...")
         async with conn.transaction():
+            await conn.execute("CREATE EXTENSION pg_trgm")
+            LOGGER.info("Created extension: pg_trgm")
+
             await conn.execute("""
                 CREATE TABLE db_version (
                     key TEXT,
@@ -57,6 +60,9 @@ async def main():
             """)
             LOGGER.info("Created table: page")
 
+            await conn.execute("CREATE UNIQUE INDEX ON page(page_category_id, ef_id)")
+            LOGGER.info("Created index on table: page")
+
             await conn.execute("""
                 CREATE TABLE account (
                     id SERIAL PRIMARY KEY,
@@ -65,6 +71,9 @@ async def main():
                 )
             """)
             LOGGER.info("Created table: account")
+
+            await conn.execute("CREATE UNIQUE INDEX ON account(name)")
+            LOGGER.info("Created index on table: account")
 
             await conn.execute("""
                 CREATE TABLE post (
@@ -80,6 +89,23 @@ async def main():
             """)
             LOGGER.info("Created table: post")
 
+            await conn.execute("CREATE INDEX ON post(ef_id)")
+            LOGGER.info("Created index on table: post")
+            await conn.execute("CREATE UNIQUE INDEX ON post(account_id, ef_id)")
+            LOGGER.info("Created index on table: post")
+            await conn.execute("CREATE INDEX ON post(created)")
+            LOGGER.info("Created index on table: post")
+            await conn.execute("CREATE INDEX ON post(page_id)")
+            LOGGER.info("Created index on table: post")
+            await conn.execute("CREATE INDEX ON post(parent_ef_id)")
+            LOGGER.info("Created index on table: post")
+            await conn.execute("CREATE INDEX ON post(account_id)")
+            LOGGER.info("Created index on table: post")
+            await conn.execute("CREATE INDEX ON post USING gin(body gin_trgm_ops)")
+            LOGGER.info("Created index on table: post")
+            await conn.execute("CREATE INDEX ON post(funny_ranking)")
+            LOGGER.info("Created index on table: post")
+
             await conn.execute("""
                 CREATE MATERIALIZED VIEW post_cache AS
                     (SELECT a.name, count(*)
@@ -91,6 +117,11 @@ async def main():
                     (SELECT '', COUNT(*) FROM post)
             """)
             LOGGER.info("Created materialized view: post_cache")
+
+            await conn.execute("CREATE UNIQUE INDEX ON post_cache(name)")
+            LOGGER.info("Created index on materialized view: post_cache")
+            await conn.execute("CREATE INDEX ON post_cache(count)")
+            LOGGER.info("Created index on materialized view: post_cache")
 
         LOGGER.info("DB initialization finished.")
     else:
