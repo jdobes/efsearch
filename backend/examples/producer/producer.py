@@ -5,7 +5,7 @@ import signal
 
 from nats.aio.client import Client
 
-from common.constants import NATS_HOST
+from common.config import NATS_HOST
 from common.logging import init_logging, get_logger
 
 LOGGER = get_logger(__name__)

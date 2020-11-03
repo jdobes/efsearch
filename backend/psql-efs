@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+PGPASSWORD=efs_db_user_pwd psql -h efs-db -U efs_db_user efsearch

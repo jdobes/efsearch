@@ -21,17 +21,24 @@ services:
       - ./docker-compose.env
     depends_on:
       - efs-db
-  efs-producer:
-    command: /efsearch/entrypoint.sh producer
+  efs-scheduler:
+    command: /efsearch/entrypoint.sh scheduler
     image: efsearch-backend:latest
-    container_name: efs-producer
+    container_name: efs-scheduler
+    env_file:
+      - ./docker-compose.env
     depends_on:
+      - efs-db
       - efs-nats
-  efs-consumer:
-    command: /efsearch/entrypoint.sh consumer
+      - efs-fetcher
+  efs-fetcher:
+    command: /efsearch/entrypoint.sh fetcher
     image: efsearch-backend:latest
-    container_name: efs-consumer
+    container_name: efs-fetcher
+    env_file:
+      - ./docker-compose.env
     depends_on:
+      - efs-db
       - efs-nats
 volumes:
   db: {}

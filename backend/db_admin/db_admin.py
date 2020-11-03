@@ -3,14 +3,10 @@ import asyncpg
 from asyncpg.exceptions import UndefinedTableError
 import os
 
+from common.config import POSTGRES_DB, POSTGRES_HOST, POSTGRES_USER, POSTGRES_PASSWORD
 from common.logging import init_logging, get_logger
 
 LOGGER = get_logger(__name__)
-
-POSTGRES_USER = os.getenv("POSTGRES_USER", "unknown")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "unknown")
-POSTGRES_DB = os.getenv("POSTGRES_DB", "unknown")
-POSTGRES_HOST = os.getenv("POSTGRES_HOST", "unknown")
 
 
 async def main():
@@ -49,13 +45,12 @@ async def main():
 
             await conn.execute("""
                 CREATE TABLE page (
-                    id SERIAL PRIMARY KEY,
+                    id BIGSERIAL PRIMARY KEY,
                     ef_id INTEGER UNIQUE NOT NULL,
                     page_category_id INTEGER REFERENCES page_category (id) NOT NULL,
-                    created TIMESTAMP WITH TIME ZONE,
-                    views INTEGER,
+                    created TIMESTAMP,
                     name TEXT NOT NULL,
-                    last_sync TIMESTAMP WITH TIME ZONE
+                    last_sync TIMESTAMP
                 )
             """)
             LOGGER.info("Created table: page")
@@ -65,7 +60,7 @@ async def main():
 
             await conn.execute("""
                 CREATE TABLE account (
-                    id SERIAL PRIMARY KEY,
+                    id BIGSERIAL PRIMARY KEY,
                     ef_id INTEGER UNIQUE NOT NULL,
                     name TEXT UNIQUE NOT NULL
                 )
@@ -77,9 +72,9 @@ async def main():
 
             await conn.execute("""
                 CREATE TABLE post (
-                    id SERIAL PRIMARY KEY,
+                    id BIGSERIAL PRIMARY KEY,
                     ef_id INTEGER UNIQUE NOT NULL,
-                    created TIMESTAMP WITH TIME ZONE,
+                    created TIMESTAMP,
                     page_id INTEGER REFERENCES page (id) NOT NULL,
                     parent_ef_id INTEGER,
                     account_id INTEGER REFERENCES account (id) NOT NULL,
@@ -122,6 +117,21 @@ async def main():
             LOGGER.info("Created index on materialized view: post_cache")
             await conn.execute("CREATE INDEX ON post_cache(count)")
             LOGGER.info("Created index on materialized view: post_cache")
+
+            await conn.execute("""
+                CREATE OR REPLACE FUNCTION update_funny_ranking(integer)
+                RETURNS void AS $$
+                    UPDATE post p1 SET funny_ranking = (
+                        SELECT COUNT(*) FROM post p2
+                        WHERE p2.parent_ef_id = p1.ef_id AND
+                        (body ILIKE '%::biggrin::%' or body ILIKE '%::lol::%')
+                    )
+                    WHERE p1.page_id = $1
+                $$
+                LANGUAGE SQL
+                VOLATILE;
+            """)
+            LOGGER.info("Created function: update_funny_ranking")
 
         LOGGER.info("DB initialization finished.")
     else:

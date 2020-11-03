@@ -1,4 +1,5 @@
 aiohttp
 asyncio-nats-client
 asyncpg
-peewee
+beautifulsoup4
+lxml
