@@ -40,5 +40,17 @@ services:
     depends_on:
       - efs-db
       - efs-nats
+  efs-frontend-legacy:
+    build:
+      context: ./
+      dockerfile: ./frontend-legacy/Dockerfile
+    image: efsearch-frontend-legacy:latest
+    container_name: efs-frontend-legacy
+    env_file:
+      - ./docker-compose.env
+    ports:
+      - 8000:8000
+    depends_on:
+      - efs-db
 volumes:
   db: {}

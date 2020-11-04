@@ -1,0 +1,23 @@
+{
+    "web-name": "EFsearch",
+    "web-subname": "specialista na evropské vyhledávání",
+    "page-counter-label": "Stránka",
+    "top-donators": "Seznam dárců",
+    "top-users": "Kolik toho máme",
+    "how-much": "Kolik",
+    "user-label": "Uživatel",
+    "comments-label": "Komentáře",
+    "big-interval": "Moc velký interval!",
+    "unknown-user": "Uživatel neexistuje!",
+    "short-search": "Hledaný výraz musí mít alespoň 3 znaky!",
+    "not-found": "Nic nebylo nalezeno!",
+    "footer-created-label": "Vytvořil",
+    "footer-version-label": "Verze:",
+    "footer-issues-label": "Nahlásit chybu",
+    "search-author": "Hledaný autor",
+    "search-text": "Hledaný text",
+    "search-from": "Datum od",
+    "search-to": "Datum do",
+    "newest-label": "Nejnovější",
+    "funniest-label": "Nejzábavnější"
+}
