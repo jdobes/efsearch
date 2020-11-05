@@ -52,15 +52,15 @@ class HTMLWriter:
 <title>%(web-name)s</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
 <meta name="robots" content="noindex,nofollow">
-<link rel="shortcut icon" href="http://www.eurofotbal.cz/res/img/favicon.ico" />
-<link rel="icon" type="image/x-icon" href="http://www.eurofotbal.cz/res/img/favicon.ico" />
-<link rel="stylesheet" href="http://www.eurofotbal.cz/res/css/_basic.css" type="text/css"> 
-<link rel="stylesheet" href="http://www.eurofotbal.cz/res/css/article.css" type="text/css"> 
-<link rel="stylesheet" href="http://www.eurofotbal.cz/res/css/forum.css" type="text/css"> 
-<link rel="stylesheet" href="http://www.eurofotbal.cz/res/css/ban.css" type="text/css"> 
-<link rel="stylesheet" href="http://www.eurofotbal.cz/res/css/poll.css" type="text/css"> 
-<link rel="stylesheet" href="http://www.eurofotbal.cz/res/css/competition.css" type="text/css"> 
-<link rel="stylesheet" href="http://www.eurofotbal.cz/res/css/userInfo.css" type="text/css">
+<link rel="shortcut icon" href="https://www.eurofotbal.cz/res/img/favicon.ico" />
+<link rel="icon" type="image/x-icon" href="https://www.eurofotbal.cz/res/img/favicon.ico" />
+<link rel="stylesheet" href="https://www.eurofotbal.cz/res/css/_basic.css" type="text/css"> 
+<link rel="stylesheet" href="https://www.eurofotbal.cz/res/css/article.css" type="text/css"> 
+<link rel="stylesheet" href="https://www.eurofotbal.cz/res/css/forum.css" type="text/css"> 
+<link rel="stylesheet" href="https://www.eurofotbal.cz/res/css/ban.css" type="text/css"> 
+<link rel="stylesheet" href="https://www.eurofotbal.cz/res/css/poll.css" type="text/css"> 
+<link rel="stylesheet" href="https://www.eurofotbal.cz/res/css/competition.css" type="text/css"> 
+<link rel="stylesheet" href="https://www.eurofotbal.cz/res/css/userInfo.css" type="text/css">
 <link rel="stylesheet" href="res/zebra_datepicker.css" type="text/css">
 <style type="text/css">
     .col-left {
@@ -247,9 +247,9 @@ $(document).ready(function()
         html += content
         html += """</div><div class="links"><div class="fl"><a href=\""""
         if post["page_category"] == 'article':
-            link = "http://www.eurofotbal.cz/clanky/-%s/?forum=1#p%s" % (str(post["page_id"]), str(post["anchor"]))
+            link = "https://www.eurofotbal.cz/clanky/-%s/?forum=1#p%s" % (str(post["page_id"]), str(post["anchor"]))
         else:
-            link = "http://www.eurofotbal.cz/serie-a/reportaz/-%s/?forum=1#p%s" % (str(post["page_id"]), str(post["anchor"]))
+            link = "https://www.eurofotbal.cz/serie-a/reportaz/-%s/?forum=1#p%s" % (str(post["page_id"]), str(post["anchor"]))
         html += link
         html += """\" class="forumreply" target="_blank">[%s]</a></div><div class="cl"></div></div></div>""" % post["page_name"].encode('utf-8')
         return html
