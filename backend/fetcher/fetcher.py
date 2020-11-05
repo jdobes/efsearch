@@ -1,6 +1,4 @@
-import aiohttp
 import asyncio
-import asyncpg
 from datetime import datetime
 import json
 import logging
@@ -8,6 +6,8 @@ import re
 import signal
 import time
 
+import aiohttp
+import asyncpg
 from bs4 import BeautifulSoup
 from nats.aio.client import Client
 
@@ -67,7 +67,7 @@ def preprocess_text(text):
     return text
 
 
-def parse_page(page, page_category):
+def parse_page(page, page_category, ef_id):
     data = {}
     article = page.find('div', attrs={'class': ARTICLE_CLASS_NAME[page_category]})
     forum = page.find('div', attrs={'class': 'forum'})
@@ -104,21 +104,39 @@ def parse_page(page, page_category):
             comment['body'] = preprocess_text(post.find('div', attrs={'class': 'text'}).decode_contents())
 
             data['forum'].append(comment)
+    else:
+        LOGGER.warning(f"Page is invalid: {page_category}/{ef_id}")
     return data
+
+
+async def store_accounts(missing_accounts):
+    async with asyncio.Semaphore(1):
+        async with RUNTIME["db_pool"].acquire() as conn:
+            async with conn.transaction():
+                rows = await conn.fetch("""
+                    INSERT INTO account (ef_id, name)
+                    (SELECT r.ef_id, r.name FROM unnest($1::account[]) as r)
+                    ON CONFLICT DO NOTHING
+                    RETURNING id, ef_id
+                """, sorted(missing_accounts, key=lambda x: x[1]))
+                for row in rows:
+                    ACCOUNT_ID_TO_DB_ID[row["ef_id"]] = row["id"]
+            if rows:
+                LOGGER.info(f"Stored new accounts: {len(rows)}")
 
 
 async def store_page(data, page_category, ef_id):
     async with RUNTIME["db_pool"].acquire() as conn:
         async with conn.transaction():
+            page_id = await conn.fetchval("SELECT id FROM page WHERE page_category_id = $1 AND ef_id = $2 FOR UPDATE", PAGE_TYPE_TO_ID[page_category], ef_id)  # acquire lock
             page_date = datetime.strptime(data['created'], DATETIME_FORMAT)
-            row = await conn.fetchrow("""
-                INSERT INTO page(ef_id, page_category_id, created, name, last_sync) VALUES ($1, $2, $3, $4, now())
-                ON CONFLICT (page_category_id, ef_id)
-                DO UPDATE SET last_sync = now()
-                RETURNING id, last_sync
-            """, ef_id, PAGE_TYPE_TO_ID[page_category], page_date, data["name"])
-            page_id = row["id"]
-            await conn.execute("SELECT id FROM page WHERE id = $1 FOR UPDATE", page_id)  # acquire lock
+            await conn.execute("""
+                UPDATE page SET
+                    created = $2,
+                    name = $3,
+                    last_sync = now()
+                WHERE id = $1
+            """, page_id, page_date, data["name"])
 
             existing_ef_ids = set()
             rows = await conn.fetch("SELECT ef_id from post WHERE page_id = $1", page_id)
@@ -136,14 +154,7 @@ async def store_page(data, page_category, ef_id):
 
             # lookup accounts
             if missing_accounts:
-                rows = await conn.fetch("""
-                    INSERT INTO account (ef_id, name)
-                    (SELECT r.ef_id, r.name FROM unnest($1::account[]) as r)
-                    ON CONFLICT (ef_id) DO UPDATE SET ef_id = EXCLUDED.ef_id
-                    RETURNING id, ef_id
-                """, list(missing_accounts))
-                for row in rows:
-                    ACCOUNT_ID_TO_DB_ID[row["ef_id"]] = row["id"]
+                await store_accounts(missing_accounts)
 
             # handle comments
             missing_comments = []
@@ -151,31 +162,46 @@ async def store_page(data, page_category, ef_id):
                 if comment["id"] in existing_ef_ids:
                     continue
                 comment_date = datetime.strptime(comment['created'], DATETIME_FORMAT)
-                missing_comments.append((comment["id"], comment_date, page_id, comment["parent_id"], ACCOUNT_ID_TO_DB_ID[comment["account_id"]], comment["body"]))
+                missing_comments.append((None, comment["id"], comment_date, page_id, comment["parent_id"], ACCOUNT_ID_TO_DB_ID[comment["account_id"]], comment["body"], 0))
 
             if missing_comments:
-                await conn.executemany("""
+                # FIXME: Avoiding duplicate posts by ON-CONFLICT-DO-NOTHING, in future introduce discussion_id and do not do that
+                await conn.execute("""
                     INSERT INTO post (ef_id, created, page_id, parent_ef_id, account_id, body)
-                    VALUES ($1, $2, $3, $4, $5, $6)
-                """, missing_comments)
-            
+                    (SELECT r.ef_id, r.created, r.page_id, r.parent_ef_id, r.account_id, r.body FROM unnest($1::post[]) as r)
+                    ON CONFLICT DO NOTHING
+                """, sorted(missing_comments, key=lambda x: x[1]))
+
                 await conn.execute("SELECT update_funny_ranking($1)", page_id)
 
-            LOGGER.info(f"Stored page: {page_category}/{ef_id} - {len(missing_accounts)} missing accounts (in cache), {len(missing_comments)} missing comments")
+        LOGGER.info(f"Stored page: {page_category}/{ef_id} - {len(missing_comments)} missing comments")
 
 
 async def sync_page(page_category, ef_id):
     async with SEMAPHORE:
         page_url = f"{EF_BASE_URL}{URL_PREFIX[page_category]}{ef_id}{FORUM_SUFIX}"
-        async with SESSION.get(page_url) as response:
-            if response.status == 200:
-                LOGGER.info(f"Fetched page: {page_category}/{ef_id} - HTTP {response.status}")
-                html = await response.text()
-                page = BeautifulSoup(html, 'lxml')
-                data = parse_page(page, page_category)
+        tries = 0
+        html = None
+        for i in range(4):
+            try:
+                async with SESSION.get(page_url) as response:
+                    if response.status == 200:
+                        LOGGER.info(f"Fetched page: {page_category}/{ef_id} - HTTP {response.status}")
+                        html = await response.text()
+                    else:
+                        LOGGER.warning(f"Unable to fetch page: {page_category}/{ef_id} - HTTP {response.status}")
+                    break
+            except aiohttp.client_exceptions.ServerDisconnectedError:
+                tries += 1
+                if tries >= 4:
+                    raise
+                else:
+                    LOGGER.warning(f"Retrying fetch of page: {page_category}/{ef_id}")
+        if html:
+            page = BeautifulSoup(html, 'lxml')
+            data = parse_page(page, page_category, ef_id)
+            if data:
                 await store_page(data, page_category, ef_id)
-            else:
-                LOGGER.warning(f"Unable to fetch page: {page_category}/{ef_id} - HTTP {response.status}")
 
 
 async def prepare_page_type_to_id_cache():
@@ -183,6 +209,13 @@ async def prepare_page_type_to_id_cache():
         rows = await conn.fetch("SELECT id, name FROM page_category")
         for row in rows:
             PAGE_TYPE_TO_ID[row["name"]] = row["id"]
+
+
+async def prepare_account_id_cache():
+    async with RUNTIME["db_pool"].acquire() as conn:
+        rows = await conn.fetch("SELECT id, ef_id FROM account")
+        for row in rows:
+            ACCOUNT_ID_TO_DB_ID[row["ef_id"]] = row["id"]
 
 
 async def message_handler(msg):
@@ -195,8 +228,9 @@ async def message_handler(msg):
 
 async def run(loop):
     RUNTIME["db_pool"] = await asyncpg.create_pool(f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}/{POSTGRES_DB}",
-                                                   min_size=FETCHER_TASKS, max_size=FETCHER_TASKS)
+                                                   min_size=FETCHER_TASKS*2, max_size=FETCHER_TASKS*2)
     await prepare_page_type_to_id_cache()
+    await prepare_account_id_cache()
     await NC.connect(servers=[NATS_HOST], loop=loop)
     await NC.subscribe(NATS_PAGES_TOPIC, cb=message_handler)
     LOGGER.info(f"Connected to {NATS_HOST}, listening on {NATS_PAGES_TOPIC} topic...")

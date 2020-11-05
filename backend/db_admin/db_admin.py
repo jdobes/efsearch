@@ -46,10 +46,10 @@ async def main():
             await conn.execute("""
                 CREATE TABLE page (
                     id BIGSERIAL PRIMARY KEY,
-                    ef_id INTEGER UNIQUE NOT NULL,
+                    ef_id INTEGER NOT NULL,
                     page_category_id INTEGER REFERENCES page_category (id) NOT NULL,
                     created TIMESTAMP,
-                    name TEXT NOT NULL,
+                    name TEXT,
                     last_sync TIMESTAMP
                 )
             """)
@@ -67,9 +67,6 @@ async def main():
             """)
             LOGGER.info("Created table: account")
 
-            await conn.execute("CREATE UNIQUE INDEX ON account(name)")
-            LOGGER.info("Created index on table: account")
-
             await conn.execute("""
                 CREATE TABLE post (
                     id BIGSERIAL PRIMARY KEY,
@@ -84,8 +81,6 @@ async def main():
             """)
             LOGGER.info("Created table: post")
 
-            await conn.execute("CREATE INDEX ON post(ef_id)")
-            LOGGER.info("Created index on table: post")
             await conn.execute("CREATE UNIQUE INDEX ON post(account_id, ef_id)")
             LOGGER.info("Created index on table: post")
             await conn.execute("CREATE INDEX ON post(created)")

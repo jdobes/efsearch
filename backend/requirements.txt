@@ -1,4 +1,5 @@
 aiohttp
+apscheduler
 asyncio-nats-client
 asyncpg
 beautifulsoup4

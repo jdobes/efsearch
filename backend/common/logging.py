@@ -1,9 +1,11 @@
+import os
 import logging
 
 
 def get_logger(name):
     logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
+    level = os.getenv('LOGGING_LEVEL_APP', "INFO")
+    logger.setLevel(getattr(logging, level, logging.INFO))
     return logger
 
 
