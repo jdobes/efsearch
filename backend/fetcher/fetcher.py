@@ -111,6 +111,7 @@ def parse_page(page, page_category, ef_id):
 
 async def store_accounts(missing_accounts):
     async with asyncio.Semaphore(1):
+        rows = None
         async with RUNTIME["db_pool"].acquire() as conn:
             async with conn.transaction():
                 rows = await conn.fetch("""
@@ -119,10 +120,10 @@ async def store_accounts(missing_accounts):
                     ON CONFLICT DO NOTHING
                     RETURNING id, ef_id
                 """, sorted(missing_accounts, key=lambda x: x[1]))
-                for row in rows:
-                    ACCOUNT_ID_TO_DB_ID[row["ef_id"]] = row["id"]
-            if rows:
-                LOGGER.info(f"Stored new accounts: {len(rows)}")
+        if rows:
+            for row in rows:
+                ACCOUNT_ID_TO_DB_ID[row["ef_id"]] = row["id"]
+            LOGGER.info(f"Stored new accounts: {len(rows)}")
 
 
 async def store_page(data, page_category, ef_id):
