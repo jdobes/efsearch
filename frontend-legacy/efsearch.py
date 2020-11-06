@@ -27,3 +27,6 @@ def root():
 def send_file(path):
     return send_from_directory('res', path)
 
+@application.route('/robots.txt')
+def send_robots():
+    return send_from_directory('.', "robots.txt")
