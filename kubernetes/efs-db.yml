@@ -1,0 +1,65 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: efs-db
+  namespace: efsearch
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 20Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: efs-db
+  namespace: efsearch
+  labels:
+    app: efs-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: efs-db
+  template:
+    metadata:
+      labels:
+        app: efs-db
+    spec:
+      containers:
+      - name: efs-db
+        image: postgres:13
+        env:
+        - name: POSTGRES_USER
+          value: efs_db_user
+        - name: POSTGRES_PASSWORD
+          value: efs_db_user_pwd
+        - name: POSTGRES_DB
+          value: efsearch
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: efs-db
+          mountPath: "/var/lib/postgresql/data"
+      volumes:
+      - name: efs-db
+        persistentVolumeClaim:
+          claimName: efs-db
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: efs-db
+  namespace: efsearch
+spec:
+  selector:
+    app: efs-db
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432

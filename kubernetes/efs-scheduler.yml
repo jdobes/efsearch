@@ -1,0 +1,36 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: efs-scheduler
+  namespace: efsearch
+  labels:
+    app: efs-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: efs-scheduler
+  template:
+    metadata:
+      labels:
+        app: efs-scheduler
+    spec:
+      containers:
+      - name: efs-scheduler
+        image: registry.owny.cz/efsearch-backend
+        command: ["/efsearch/entrypoint.sh"]
+        args: ["scheduler"]
+        env:
+        - name: POSTGRES_USER
+          value: efs_db_user
+        - name: POSTGRES_PASSWORD
+          value: efs_db_user_pwd
+        - name: POSTGRES_DB
+          value: efsearch
+        - name: POSTGRES_HOST
+          value: efs-db.efsearch.svc
+        - name: NATS_HOST
+          value: nats://efs-nats.efsearch.svc:4222
+        - name: LOGGING_LEVEL_APP
+          value: INFO

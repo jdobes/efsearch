@@ -1,0 +1,72 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: efs-frontend-legacy
+  namespace: efsearch
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 20Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: efs-frontend-legacy
+  namespace: efsearch
+  labels:
+    app: efs-frontend-legacy
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: efs-frontend-legacy
+  template:
+    metadata:
+      labels:
+        app: efs-frontend-legacy
+    spec:
+      containers:
+      - name: efs-frontend-legacy
+        image: registry.owny.cz/efsearch-frontend-legacy
+        env:
+        - name: POSTGRES_HOST
+          value: efs-db.efsearch.svc
+        ports:
+        - containerPort: 8000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: efs-frontend-legacy
+  namespace: efsearch
+spec:
+  selector:
+    app: efs-frontend-legacy
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: efs-frontend-legacy
+  namespace: efsearch
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+  - host: efsearch.owny.cz
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: efs-frontend-legacy
+          servicePort: 8000
