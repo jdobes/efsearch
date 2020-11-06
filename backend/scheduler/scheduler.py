@@ -116,6 +116,22 @@ async def queue_new_pages():
         LOGGER.info(f"Scheduled fetch of {len(chunk)} pages.")
 
 
+async def queue_unsynced_pages():
+    async with RUNTIME["db_pool"].acquire() as conn:
+        rows = await conn.fetch("SELECT pc.name, p.ef_id FROM page p JOIN page_category pc ON p.page_category_id = pc.id WHERE p.last_sync IS NULL")
+    if rows:
+        chunk = []
+        for row in rows:
+            chunk.append({"page_category": row["name"], "ef_id": str(row["ef_id"])})
+            if len(chunk) % 10000 == 0:
+                await NC.publish(NATS_PAGES_TOPIC, json.dumps(chunk).encode())
+                LOGGER.info("Scheduled fetch of 10000 pages.")
+                chunk = []
+        if chunk:
+            await NC.publish(NATS_PAGES_TOPIC, json.dumps(chunk).encode())
+            LOGGER.info(f"Scheduled fetch of {len(chunk)} pages.")
+
+
 async def refresh_post_cache():
     async with RUNTIME["db_pool"].acquire() as conn:
         await conn.execute("REFRESH MATERIALIZED VIEW post_cache")
@@ -139,6 +155,7 @@ def main():
             sig, lambda sig=sig: loop.create_task(terminate(sig, loop)))
 
     loop.run_until_complete(init(loop))
+    loop.run_until_complete(queue_unsynced_pages())
 
     scheduler = AsyncIOScheduler()
     scheduler.add_job(queue_new_pages, "interval", seconds=QUEUE_NEW_PAGES_INTERVAL, next_run_time=datetime.now())
