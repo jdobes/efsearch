@@ -188,7 +188,7 @@ async def sync_page(page_category, ef_id):
                 async with SESSION.get(page_url) as response:
                     if response.status == 200:
                         LOGGER.info(f"Fetched page: {page_category}/{ef_id} - HTTP {response.status}")
-                        html = await response.text()
+                        html = await response.text(errors="ignore")
                     else:
                         LOGGER.warning(f"Unable to fetch page: {page_category}/{ef_id} - HTTP {response.status}")
                     break
