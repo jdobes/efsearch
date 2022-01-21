@@ -1,37 +1,37 @@
 import json
-from urllib import quote
+from urllib.parse import quote
 
 class Localizer:
     def __init__(self, lang):
-        filename = "languages/" + lang + ".json"
+        filename = "frontend/languages/" + lang + ".json"
         fh = open(filename, 'r')
         try:
             self.values = json.load(fh)
             for key in self.values.keys():
-                self.values[key] = self.values[key].encode('utf-8')
+                self.values[key] = self.values[key]
         finally:
             fh.close()
 
-        filename = "custom/default.json"
+        filename = "frontend/custom/default.json"
         fh = open(filename, 'r')
         try:
             customs = json.load(fh)
             for key in customs.keys():
                 # encode and save into previous dictionary
-                self.values[key] = customs[key].encode('utf-8')
+                self.values[key] = customs[key]
         finally:
             fh.close()
 
-        filename = "custom/aliases.json"
+        filename = "frontend/custom/aliases.json"
         fh = open(filename, 'r')
         try:
             self.aliases = json.load(fh)
             for key in self.aliases.keys():
-                self.aliases[key] = self.aliases[key].encode('utf-8')
+                self.aliases[key] = self.aliases[key]
         finally:
             fh.close()
 
-        filename = "custom/donations.json"
+        filename = "frontend/custom/donations.json"
         fh = open(filename, 'r')
         try:
             self.donations = json.load(fh)

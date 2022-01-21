@@ -14,8 +14,8 @@ services:
     command: /efsearch/entrypoint.sh db-admin
     build:
       context: ./
-      dockerfile: ./backend/Dockerfile
-    image: efsearch-backend:latest
+      dockerfile: ./Dockerfile
+    image: efsearch:latest
     container_name: efs-db-admin
     env_file:
       - ./docker-compose.env
@@ -23,7 +23,7 @@ services:
       - efs-db
   efs-scheduler:
     command: /efsearch/entrypoint.sh scheduler
-    image: efsearch-backend:latest
+    image: efsearch:latest
     container_name: efs-scheduler
     env_file:
       - ./docker-compose.env
@@ -33,19 +33,17 @@ services:
       - efs-fetcher
   efs-fetcher:
     command: /efsearch/entrypoint.sh fetcher
-    image: efsearch-backend:latest
+    image: efsearch:latest
     container_name: efs-fetcher
     env_file:
       - ./docker-compose.env
     depends_on:
       - efs-db
       - efs-nats
-  efs-frontend-legacy:
-    build:
-      context: ./
-      dockerfile: ./frontend-legacy/Dockerfile
-    image: efsearch-frontend-legacy:latest
-    container_name: efs-frontend-legacy
+  efs-frontend:
+    command: /efsearch/entrypoint.sh frontend
+    image: efsearch:latest
+    container_name: efs-frontend
     env_file:
       - ./docker-compose.env
     ports:

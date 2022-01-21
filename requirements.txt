@@ -4,3 +4,6 @@ asyncio-nats-client
 asyncpg
 beautifulsoup4
 lxml
+flask
+peewee
+psycopg2-binary

@@ -3,8 +3,8 @@ import asyncpg
 from asyncpg.exceptions import UndefinedTableError
 import os
 
-from common.config import POSTGRES_DB, POSTGRES_HOST, POSTGRES_USER, POSTGRES_PASSWORD
-from common.logging import init_logging, get_logger
+from backend.common.config import POSTGRES_DB, POSTGRES_HOST, POSTGRES_USER, POSTGRES_PASSWORD
+from backend.common.logging import init_logging, get_logger
 
 LOGGER = get_logger(__name__)
 

@@ -11,9 +11,9 @@ import asyncpg
 from bs4 import BeautifulSoup
 from nats.aio.client import Client
 
-from common.config import NATS_HOST, NATS_PAGES_TOPIC, EF_BASE_URL, FETCHER_TASKS, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, \
+from backend.common.config import NATS_HOST, NATS_PAGES_TOPIC, EF_BASE_URL, FETCHER_TASKS, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, \
     POSTGRES_DB
-from common.logging import init_logging, get_logger
+from backend.common.logging import init_logging, get_logger
 
 LOGGER = get_logger(__name__)
 

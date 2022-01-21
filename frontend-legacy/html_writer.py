@@ -2,7 +2,7 @@
 from flask import request
 from models import *
 from datetime import datetime, date, timedelta
-from urllib import quote
+from urllib.parse import quote
 from localizer import Localizer
 
 POSTS_PER_PAGE = 250
@@ -11,11 +11,11 @@ USER_LIST = 500
 class HTMLWriter:
     def __init__(self):
         self.localizer = Localizer("cz")
-        self.author = request.args.get('a', '').encode('utf-8')
-        self.search = request.args.get('s', '').encode('utf-8')
-        self.search_from = request.args.get('f', '').encode('utf-8')
-        self.search_to = request.args.get('t', '').encode('utf-8')
-        self.order = request.args.get('o', '').encode('utf-8')
+        self.author = request.args.get('a', '')
+        self.search = request.args.get('s', '')
+        self.search_from = request.args.get('f', '')
+        self.search_to = request.args.get('t', '')
+        self.order = request.args.get('o', '')
 
         # Default to ordering by date
         if not self.order in set(['n', 'f']):
@@ -142,7 +142,7 @@ $(document).ready(function()
 
     def get_pages_count(self, posts_count):
         if posts_count > 0:
-            pages_count = posts_count / POSTS_PER_PAGE
+            pages_count = int(posts_count / POSTS_PER_PAGE)
             if (posts_count % POSTS_PER_PAGE) > 0:
                 pages_count += 1
         else:
@@ -153,7 +153,6 @@ $(document).ready(function()
         html = """<div class="box green"><div class="in c"><div class="pageslist"><table cellspacing="0" cellpadding="0"><tbody><tr><td>
 <a href="/?a=%(author-quoted)s&s=%(search-quoted)s&p=1&f=%(search_from)s&t=%(search_to)s&o=%(order)s"><span class="pg-bb">&nbsp;</span></a><div class="dl"></div>""" % self.localizer.getDictionary()
 
-        total = 14
         if (self.page - 7) < 1:
             floor = 1
         else:
@@ -164,12 +163,12 @@ $(document).ready(function()
         else:
             top = self.page + 7
 
-        for i in xrange(self.page - floor):
+        for i in range(self.page - floor):
             html += """<a href="/?a=%s&s=%s&p=%d&f=%s&t=%s&o=%s">%d</a><div class="dl"></div>""" % (quote(self.author), quote(self.search), i + floor, self.search_from, self.search_to, self.order, i + floor)
 
         html += """<div class="actual">%d</div><div class="dl"></div>""" % (self.page)
 
-        for i in xrange(top - self.page):
+        for i in range(top - self.page):
             html += """<a href="/?a=%s&s=%s&p=%d&f=%s&t=%s&o=%s">%d</a><div class="dl"></div>""" % (quote(self.author), quote(self.search), i + self.page + 1, self.search_from, self.search_to, self.order, i + self.page + 1)
 
         html += """<a href="/?a=%(author-quoted)s&s=%(search-quoted)s&p=%(pages_count)d&f=%(search_from)s&t=%(search_to)s&o=%(order)s"><span class="pg-ff">&nbsp;</span></a><div class="cl"></div>
@@ -228,13 +227,13 @@ $(document).ready(function()
         return html
 
     def create_post(self, post):
-        author = post["account_name"].encode('utf-8')
+        author = post["account_name"]
         html = """<div class="post"><div><a href="?a=%s&s=%s&f=%s&t=%s&o=%s" class="fl name user-link">""" % (quote(author), quote(self.search), self.search_from, self.search_to, self.order)
         html += author
         html += """</a>"""
 
         try:
-            alias = self.localizer.getAliases()[author.decode('utf-8')]
+            alias = self.localizer.getAliases()[author]
         except KeyError:
             alias = ""
         if alias:
@@ -243,7 +242,7 @@ $(document).ready(function()
         html += """<div class="fl time">"""
         html += post["created"].strftime("%d.%m.%Y %H:%M")
         html += """</div><div class="cl"></div></div><div class="text">"""
-        content = post["body"].encode('utf-8')
+        content = post["body"]
         html += content
         html += """</div><div class="links"><div class="fl"><a href=\""""
         if post["page_category"] == 'article':
@@ -251,7 +250,7 @@ $(document).ready(function()
         else:
             link = "https://www.eurofotbal.cz/serie-a/reportaz/-%s/?forum=1#p%s" % (str(post["page_id"]), str(post["anchor"]))
         html += link
-        html += """\" class="forumreply" target="_blank">[%s]</a></div><div class="cl"></div></div></div>""" % post["page_name"].encode('utf-8')
+        html += """\" class="forumreply" target="_blank">[%s]</a></div><div class="cl"></div></div></div>""" % post["page_name"]
         return html
 
     def get_ranking(self):
@@ -279,9 +278,8 @@ $(document).ready(function()
             html += """<table cellspacing="0" cellpadding="0"><tbody>
 <tr><th>%(user-label)s</th><th>%(comments-label)s</th></tr>""" % self.localizer.getDictionary()
             for user in users:
-                user.name = user.name.encode('utf-8')
                 try:
-                    alias = self.localizer.getAliases()[user.name.decode('utf-8')]
+                    alias = self.localizer.getAliases()[user.name]
                     alias = """<div class="fl" style="color: #656565; padding-left: 5px">(%s)</div>""" % alias
                 except KeyError:
                     alias = ""
@@ -289,7 +287,7 @@ $(document).ready(function()
                 html += """<tr><td><div class="fl"><a href="?a=%s&s=%s&f=%s&t=%s&o=%s">%s</a></div>%s</td><td>%d</td></tr>""" % (quote(user.name), quote(self.search), self.search_from, self.search_to, self.order, user.name, alias, user.count)
             html += """</tbody></table>"""
         else:
-            html += """<div style="text-align: center"><b>%(big-interval)s</b><br/><img src="res/img/wrong.png"></div>""" % self.localizer.getDictionary()
+            html += """<div style="text-align: center"><b>%(big-interval)s</b></div>""" % self.localizer.getDictionary()
 
         html += """</div></div></div>"""
         return html
@@ -316,7 +314,7 @@ $(document).ready(function()
             try:
                 Account.get(Account.name == self.author)
             except Account.DoesNotExist:
-                forum += """<div style="text-align: center"><b>%(unknown-user)s</b><br/><img src="res/img/wrong.png"></div>""" % self.localizer.getDictionary()
+                forum += """<div style="text-align: center"><b>%(unknown-user)s</b><br/><img src="res/img/wrong.jpg"></div>""" % self.localizer.getDictionary()
                 return count, forum
             posts = posts.where(Account.name == self.author)
 
@@ -335,7 +333,7 @@ $(document).ready(function()
 
         # For better performance, there aren't smaller tokens in index?
         if self.search and len(self.search) < 3:
-            forum += """<div style="text-align: center"><b>%(short-search)s</b><br/><img src="res/img/wrong.png"></div>""" % self.localizer.getDictionary()
+            forum += """<div style="text-align: center"><b>%(short-search)s</b><br/><img src="res/img/wrong.jpg"></div>""" % self.localizer.getDictionary()
             return count, forum
 
         if self.search or self.search_from or self.search_to:
@@ -344,7 +342,7 @@ $(document).ready(function()
             count = Postcache.get(Postcache.name == self.author).count
 
         if count <= 0:
-            forum += """<div style="text-align: center"><b>%(not-found)s</b><br/><img src="res/img/wrong.png"></div>""" % self.localizer.getDictionary()
+            forum += """<div style="text-align: center"><b>%(not-found)s</b><br/><img src="res/img/wrong.jpg"></div>""" % self.localizer.getDictionary()
             return count, forum
 
         if self.order == 'f':

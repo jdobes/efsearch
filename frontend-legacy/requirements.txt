@@ -1,3 +1,0 @@
-flask
-peewee
-psycopg2-binary
