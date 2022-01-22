@@ -126,6 +126,17 @@ async def store_accounts(missing_accounts):
             LOGGER.info(f"Stored new accounts: {len(rows)}")
 
 
+async def update_last_sync(page_category, ef_id):
+    async with RUNTIME["db_pool"].acquire() as conn:
+        async with conn.transaction():
+            await conn.execute("""
+                UPDATE page SET
+                    last_sync = now()
+                WHERE page_category_id = $1
+                  AND ef_id = $2
+            """, PAGE_TYPE_TO_ID[page_category], ef_id)
+
+
 async def store_page(data, page_category, ef_id):
     async with RUNTIME["db_pool"].acquire() as conn:
         async with conn.transaction():
@@ -203,6 +214,8 @@ async def sync_page(page_category, ef_id):
             data = parse_page(page, page_category, ef_id)
             if data:
                 await store_page(data, page_category, ef_id)
+            else:
+                await update_last_sync(page_category, ef_id)
 
 
 async def prepare_page_type_to_id_cache():
