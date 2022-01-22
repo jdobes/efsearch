@@ -223,6 +223,7 @@ $(document).ready(function()
 </div>"""
         html += self.get_pagination()
         html += """</div><div class="col-right">"""
+        html += self.get_donation_ranking()
         html += """</div></div>"""
         return html
 
@@ -290,6 +291,33 @@ $(document).ready(function()
             html += """<div style="text-align: center"><b>%(big-interval)s</b></div>""" % self.localizer.getDictionary()
 
         html += """</div></div></div>"""
+        return html
+
+    def get_donation_ranking(self):
+        html = """<div class="box green"><div class="in"><div class="bookmark"><span class="it active">%(top-donators)s</span>
+        <span class="dl"></span><div class="border"></div></div>
+        <div><table cellspacing="0" cellpadding="0">
+        <tbody>
+        <tr><th>%(user-label)s</th><th>%(how-much)s</th></tr>""" % self.localizer.getDictionary()
+
+        donations = self.localizer.getDonations()
+        for record in donations:
+            try:
+                alias = self.localizer.getAliases()[record[0]]
+                alias = """<div class="fl" style="color: #656565; padding-left: 5px">(%s)</div>""" % alias
+            except KeyError:
+                alias = ""
+
+            if record[0].startswith('?'):
+                html += """<tr><td><div class="fl">%s</div></td><td>%s</td></tr>""" % (record[0][1:], record[1])
+            else:
+                html += """<tr><td><div class="fl"><a href="?a=%s">%s</a></div>%s</td><td>%s</td></tr>""" % (quote(record[0]), record[0], alias, record[1])
+
+        html += """</tbody></table></div></div></div>"""
+
+        html += """<div class="cl h10"></div>
+            <div style="text-align: center;">Prosím <a href="https://www.buymeacoffee.com/efsearch" target="_blank">přispějte</a> na tento projekt!</div>"""
+
         return html
 
     def get_forum(self):
