@@ -1,7 +1,6 @@
 import asyncio
 from datetime import datetime
 import json
-import logging
 import signal
 
 import aiohttp
@@ -93,7 +92,7 @@ async def queue_new_pages():
             top_id_db = top_ids_db.get(page_category, 0)
             if top_id_web > top_id_db:
                 LOGGER.info(f"Missing pages: {page_category}/{top_id_db+1}-{top_id_web}")
-                for idx in range(top_id_db+1, top_id_web+1):
+                for idx in range(top_id_web, top_id_db, -1):
                     to_insert.append((None, idx, PAGE_TYPE_TO_ID[page_category], None, None, None))
         await conn.execute("""
             INSERT INTO page (page_category_id, ef_id)
@@ -118,7 +117,7 @@ async def queue_new_pages():
 
 async def queue_unsynced_pages():
     async with RUNTIME["db_pool"].acquire() as conn:
-        rows = await conn.fetch("SELECT pc.name, p.ef_id FROM page p JOIN page_category pc ON p.page_category_id = pc.id WHERE p.last_sync IS NULL")
+        rows = await conn.fetch("SELECT pc.name, p.ef_id FROM page p JOIN page_category pc ON p.page_category_id = pc.id WHERE p.last_sync IS NULL ORDER BY pc.name, p.ef_id DESC")
     if rows:
         chunk = []
         for row in rows:
