@@ -344,7 +344,7 @@ $(document).ready(function()
             try:
                 Account.get(Account.name == self.author)
             except Account.DoesNotExist:
-                forum += """<div style="text-align: center"><b>%(unknown-user)s</b><br/><img src="/res/img/wrong.jpg"></div>""" % self.localizer.getDictionary()
+                forum += """<div style="text-align: center"><b>%(unknown-user)s</b><br/><img src="/res/img/wrong.png"></div>""" % self.localizer.getDictionary()
                 return count, forum
             posts = posts.where(Account.name == self.author)
 
@@ -363,7 +363,7 @@ $(document).ready(function()
 
         # For better performance, there aren't smaller tokens in index?
         if self.search and len(self.search) < 3:
-            forum += """<div style="text-align: center"><b>%(short-search)s</b><br/><img src="/res/img/wrong.jpg"></div>""" % self.localizer.getDictionary()
+            forum += """<div style="text-align: center"><b>%(short-search)s</b><br/><img src="/res/img/wrong.png"></div>""" % self.localizer.getDictionary()
             return count, forum
 
         if self.search or self.search_from or self.search_to:
@@ -372,7 +372,7 @@ $(document).ready(function()
             count = Postcache.get(Postcache.name == self.author).count
 
         if count <= 0:
-            forum += """<div style="text-align: center"><b>%(not-found)s</b><br/><img src="/res/img/wrong.jpg"></div>""" % self.localizer.getDictionary()
+            forum += """<div style="text-align: center"><b>%(not-found)s</b><br/><img src="/res/img/wrong.png"></div>""" % self.localizer.getDictionary()
             return count, forum
 
         if self.order == 'f':
