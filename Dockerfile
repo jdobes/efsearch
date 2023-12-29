@@ -14,7 +14,7 @@ RUN FULL_RHEL=$(microdnf repolist --enabled | grep rhel-8) ; \
 
 RUN microdnf module enable postgresql:13 && \
     microdnf install --setopt=install_weak_deps=0 --setopt=tsflags=nodocs \
-        python39 python39-pip python39-devel python39-setuptools shadow-utils gcc postgresql postgresql-devel && \
+        python39 python39-pip python39-devel python39-setuptools shadow-utils gcc postgresql postgresql-devel util-linux && \
     microdnf clean all && \
     pip3 install -r /efsearch/requirements.txt && \
     rm -rf /root/.cache
