@@ -316,7 +316,9 @@ $(document).ready(function()
         html += """</tbody></table></div></div></div>"""
 
         html += """<div class="cl h10"></div>
-            <div style="text-align: center;">Prosím <a href="https://www.buymeacoffee.com/efsearch" target="_blank">přispějte</a> na tento projekt!</div>"""
+            <div style="text-align: center;"><a href="https://www.buymeacoffee.com/efsearch" target="_blank">Přispějte</a> na tento projekt.</div>
+            <div class="cl h10"></div>
+            <div style="text-align: center;">Děkuji! ❤️</div>"""
 
         return html
 
