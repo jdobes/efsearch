@@ -1,0 +1,63 @@
+.userinfo {
+	display: none;
+	position: absolute;
+	width: 300px;
+	background: white;
+	z-index: 2;
+	font-size: 11px;
+	font-weight: normal !important;
+}
+
+.userinfo .box .in {
+	width: 290px !important;
+}
+
+.userinfo .close {
+	margin-right: 13px;
+	margin-top: -3px;
+	_margin-top: 0;
+}
+
+.userinfo .bar {
+	_height: 19px !important;
+	_line-height: 19px !important;
+}
+
+tr.bold td .userinfo td {
+	font-weight: normal !important;
+}
+
+.userinfo .blockuser-remove {
+	background-position: 0 -288px;
+}
+
+.userinfo .sendmail, .userinfo .blockuser, .userinfo .moreleft, .userinfo .tipligaleft {
+	width: 134px;
+}
+
+.userinfo .sendmail, .userinfo .contact, .userinfo .blockuser {
+	line-height: 16px;
+	height: 22px;
+}
+
+.userinfo .contact .loader, .userinfo .blockuser .loader {
+	width: 14px;
+	height: 14px;
+}
+
+.tlduelhead .userinfo {
+	left: 103px;
+	top: 70px;
+}
+
+h1.pagetitle .userinfo {
+	left: 186px;
+}
+
+.userinfo td {
+	background: #ffffff !important;
+}
+
+.userinfo a {
+	color: #656565 !important;
+}

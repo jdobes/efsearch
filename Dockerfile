@@ -36,6 +36,7 @@ ADD frontend-legacy/*                /efsearch/frontend/
 ADD frontend-legacy/custom/*         /efsearch/frontend/custom/
 ADD frontend-legacy/languages/*      /efsearch/frontend/languages/
 ADD frontend-legacy/res/*            /efsearch/frontend/res/
+ADD frontend-legacy/res/css/*        /efsearch/frontend/res/css/
 ADD frontend-legacy/res/img/*        /efsearch/frontend/res/img/
 ADD frontend-legacy/res/img/smiles/* /efsearch/frontend/res/img/smiles/
 

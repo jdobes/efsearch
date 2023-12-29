@@ -1,0 +1,28 @@
+.box .poll table td {
+	vertical-align: middle;
+	padding: 0px !important;
+	border-right: none !important;
+}
+.box .poll table td.left {
+	width: 23px !important;
+}
+
+.poll .name {
+	padding: 5px;
+	background: white;
+	border-bottom: 1px solid #DCEBC5;
+	font-weight: bold;
+}
+
+.optionbar {
+	height: 6px;
+	font-size: 0px;
+	background: #9D0C15;
+}
+.optionbarunder {
+	height: 6px;
+	font-size: 0px;
+	width: 100%;
+	background: #eeeeee;
+	margin-bottom: 2px;
+}

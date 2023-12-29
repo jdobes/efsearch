@@ -1,0 +1,29 @@
+.ban {
+	display: none;
+	position: absolute;
+	z-index: 200;
+	width: 360px;
+}
+.ban .box .in {
+	width: 350px !important;
+}
+.ban textarea {
+	width: 340px;
+	height: 40px;
+}
+
+.ban .box .bar a {
+	text-decoration: none;
+	margin-right: 5px;
+}
+
+.ban .history {
+	width: 340px;
+	height: 100px;
+	overflow: auto;
+	border: 1px solid #656565;
+}
+.ban .history .line {
+	border-bottom: 1px solid silver;
+	padding: 2px 3px;
+}

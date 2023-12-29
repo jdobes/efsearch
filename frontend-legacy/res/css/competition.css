@@ -1,0 +1,59 @@
+td.clubs_logo {
+	width: 15px;
+	border-right: none !important;
+	text-align: center;
+}
+
+table.leaguetable td.logo {
+	width: 15px;
+	border-right: none !important;
+	text-align: center;
+}
+table.leaguetable td.c1 {
+	width: 20px;
+}
+table.leaguetable.full td.c1 {
+	width: 30px;
+}
+table.leaguetable td.c2 {
+	width: 40px;
+}
+
+.stadium td.pic {
+	padding: 0px !important;
+	border-bottom: 0px !important;
+	width: 200px;
+}
+.stadium td.data {
+	padding: 0px !important;
+	border: 0px !important;
+}
+.stadium td.date {
+	width: 70px;
+}
+.stadium td.stage {
+	width: 60px;
+}
+
+.history .logo {
+	width: 150px;
+	margin-right: 5px;
+	background: white;
+	text-align: center;
+	padding: 5px 0px;
+}
+.history .hright {
+	width: 341px;
+}
+.history table td {
+	font-weight: bold;
+	vertical-align: middle;
+}
+.history td.m {
+	width: 30px;
+	border-right: none !important;
+}
+
+.comp-inactive a, a.comp-inactive {
+	color: #b0b0b0 !important;
+}

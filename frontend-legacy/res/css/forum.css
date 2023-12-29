@@ -1,0 +1,220 @@
+.forum .post {
+	padding: 5px;
+	border-bottom: 1px solid #eeeeee;
+	background: white;
+	-webkit-transition: background 500ms;
+	-moz-transition: background 500ms;
+	-o-transition: background 500ms;
+	transition: background 500ms;
+}
+
+
+.forum .post.style1.highlight {background: #f8f8f8 !important;}
+.forum .post.style1.ismy {background: #f6fbf1;}
+.forum .post.style1.ismy.highlight {background: #e6fad2 !important;}
+.forum .post.style1.unread {background: #ffffe0;}
+.forum .post.style1.unread.highlight {background: #ffffc0 !important;}
+
+.forum .post.style2.highlight {background: #f4f4f4 !important;}
+.forum .post.style2.ismy {background: #e6fad2;}
+.forum .post.style2.ismy.highlight {background: #cef9a3 !important;}
+.forum .post.style2.unread {background: #ffffc0;}
+.forum .post.style2.unread.highlight {background: #ffff90 !important;}
+
+.forum .post.style3.highlight {background: #f0f0f0 !important;}
+.forum .post.style3.ismy {background: #d6fab3;}
+.forum .post.style3.ismy.highlight {background: #b6f875 !important;}
+.forum .post.style3.unread {background: #ffffa0;}
+.forum .post.style3.unread.highlight {background: #ffff60 !important;}
+
+.forum .post.nominated {background: #fff0f0 !important;}
+
+.forum .post.last {
+	border-bottom: none;
+}
+
+.forum .post .name {
+	font-weight: bold;
+	padding-right: 5px;
+	padding-left: 15px;
+	background:url("/res/img/user.gif") no-repeat scroll 0 0 transparent;
+}
+.forum .post .name.deleted {
+	font-weight: normal;
+	color: #8A8A8A;
+}
+.forum .post .time {
+	color: #8A8A8A;
+	padding-right: 5px;
+	padding-left: 15px;
+	background:url("/res/img/hodiny.gif") no-repeat scroll 0 0 transparent;
+}
+.forum .post .name img, .forum .post .time img {
+	height: 12px;
+	margin-right: 5px;
+}
+.forum .post .anchor {
+	color: #8A8A8A;
+	text-decoration: none;
+}
+.forum .post .text {
+	padding: 3px 0px;
+}
+.forum .post .text img.smile {
+	width: 15px;
+	height: 15px;
+}
+.forum .post .links a {
+	color: #9d0c15;
+}
+
+.forum .post .links .fl {
+	float: none\9; /* pro IE8 */
+}
+.forum .post .links .cl {
+	display: none\9; /* pro IE8 */
+}
+
+.forum .post .parentlink {
+	float: left;
+}
+.forum .post .parentlink a {
+	float: right;
+	width: 8px;
+	height: 9px;
+	margin-top: 1px;
+	background:url("/res/img/ico-forum-parent.gif") no-repeat scroll 0 0 transparent;
+}
+
+.newpost textarea {
+	width: 486px;
+	height: 60px;
+}
+
+.newpost img {
+	width: 15px;
+	height: 15px;
+	margin: 0px 1px;
+}
+
+#follow-button {
+	height: 20px;
+}
+#follow-button .text {
+	padding-top: 3px;
+}
+
+.forum .post.deleted * {
+	color: silver !important;
+}
+
+a.nextunread, a.prevunread, a.nextmy, a.prevmy {
+	float: right;
+	width: 13px;
+	height: 12px;
+	line-height: 12px;
+	font-size: 1px;
+	background: url('/res/img/ico-forum-move.png') no-repeat 3px 0;
+	margin-top: 3px;
+	margin-top: -11px\9; /* pro IE8 */
+}
+a.prevunread {
+	margin-top: 0px;
+	background-position: 3px -12px;
+}
+a.nextmy {
+	background-position: 3px -24px;
+}
+a.prevmy {
+	margin-top: 0px;
+	background-position: 3px -36px;
+}
+.style3 .nextmy {
+	background-position: 3px 0;
+}
+.style3 .prevmy {
+	background-position: 3px -12px;
+}
+
+#follow-info {
+	float: left;
+	margin-left: 5px;
+	margin-top: 3px;
+	font-weight: bold;
+	color: #164F80;
+}
+
+#follow-button .loader {
+	margin-top: 3px;
+	margin-right: 40px;
+}
+
+.forum div.reply {
+	margin-top: 5px;
+	height: 1px;
+	overflow: hidden;
+}
+
+.forum div.reply #userwarning {
+	margin-bottom: 3px;
+}
+
+.forum div.reply .bottomdiv {
+	margin: 5px 0;
+}
+
+.forum div.reply .buttondiv {
+	width: 96px;
+	height: 38px;
+	text-align: center;
+}
+
+.forum div.reply .buttondiv input {
+	width: 90px\9;  /* pro IE8 */
+}
+
+.forum div.reply .checkboxdiv {
+	margin-left: 5px;
+}
+
+.forum div.reply .checkboxdiv input {
+	height: auto;
+}
+
+.forum div.reply .checkboxdiv label {
+	display: inline-block;
+	margin-left: 2px;
+	vertical-align: top;
+	padding-top: 3px;
+}
+
+.forum div.reply .buttondiv .loader {
+	margin-top: 3px;
+	width: 14px;
+	height: 14px;
+}
+
+.forum div.reply .info, .forum div.reply .error {
+	font-weight: bold;
+	text-align: left;
+	padding-top: 3px;
+}
+
+.forum div.reply .error {
+	color: red;
+}
+
+.forum .post .replyinfo {
+	margin-top: 5px;
+	font-size: 10px;
+	color: gray;
+}
+
+.newpostlink, .forumstartlink {
+	position: absolute;
+	top: 6px;
+	left: 480px;
+	text-decoration: none;
+	width: 11px;
+	height: 6px;
+}
