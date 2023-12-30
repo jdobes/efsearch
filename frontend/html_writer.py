@@ -274,8 +274,8 @@ $(document).ready(function()
             f = datetime.strptime(self.search_from, "%Y-%m-%d")
             f = f.replace(hour=0, minute=0)
             td = t - f
-            if not td.days > 365:
-                users = Account.select(Account.name, fn.Count(Post.id).alias("count")).join(Post).where(Post.created >= f).where(Post.created <= t).group_by(Account.name).order_by(SQL("count desc")).limit(USER_LIST)
+            if not td.days > 366:
+                users = Account.select(Account.name, fn.Count(Post.id).alias("count")).join(Post).where(Post.created >= f).where(Post.created <= t).where(Account.name != '').group_by(Account.name).order_by(SQL("count desc")).limit(USER_LIST)
         else:
             users = Postcache.select().order_by(Postcache.count.desc()).offset(1).limit(USER_LIST)
 
