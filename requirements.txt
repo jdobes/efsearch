@@ -3,7 +3,8 @@ apscheduler
 asyncio-nats-client
 asyncpg
 beautifulsoup4
-lxml==4.9.4
 flask
+gunicorn
+lxml==4.9.4
 peewee
 psycopg2-binary

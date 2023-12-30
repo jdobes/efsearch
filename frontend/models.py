@@ -1,5 +1,7 @@
 from peewee import *
-from efsearch import db
+
+from frontend.efsearch import db
+
 
 class UnknownField(object):
     pass

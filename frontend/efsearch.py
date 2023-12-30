@@ -13,7 +13,8 @@ db = PostgresqlDatabase('efsearch', user='efs_db_user', password='efs_db_user_pw
 #logger.addHandler(logging.StreamHandler())
 #logger.setLevel(logging.DEBUG)
 
-from page_search import PageSearch
+from frontend.page_search import PageSearch
+
 
 @application.route("/", methods=['GET'])
 def root():
@@ -23,9 +24,11 @@ def root():
     db.close()
     return html
 
+
 @application.route('/res/<path:path>')
 def send_file(path):
     return send_from_directory('res', path)
+
 
 @application.route('/robots.txt')
 def send_robots():

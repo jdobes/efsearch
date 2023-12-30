@@ -25,19 +25,19 @@ USER efsearch
 
 EXPOSE 8000
 
-ADD psql-efs                         /usr/local/bin/
-ADD *.sh                             /efsearch/
-ADD backend/*.py                     /efsearch/backend/
-ADD backend/common/*.py              /efsearch/backend/common/
-ADD backend/db_admin/*.py            /efsearch/backend/db_admin/
-ADD backend/fetcher/*.py             /efsearch/backend/fetcher/
-ADD backend/scheduler/*.py           /efsearch/backend/scheduler/
-ADD frontend-legacy/*                /efsearch/frontend/
-ADD frontend-legacy/custom/*         /efsearch/frontend/custom/
-ADD frontend-legacy/languages/*      /efsearch/frontend/languages/
-ADD frontend-legacy/res/*            /efsearch/frontend/res/
-ADD frontend-legacy/res/css/*        /efsearch/frontend/res/css/
-ADD frontend-legacy/res/img/*        /efsearch/frontend/res/img/
-ADD frontend-legacy/res/img/smiles/* /efsearch/frontend/res/img/smiles/
+ADD psql-efs                  /usr/local/bin/
+ADD *.sh                      /efsearch/
+ADD backend/*.py              /efsearch/backend/
+ADD backend/common/*.py       /efsearch/backend/common/
+ADD backend/db_admin/*.py     /efsearch/backend/db_admin/
+ADD backend/fetcher/*.py      /efsearch/backend/fetcher/
+ADD backend/scheduler/*.py    /efsearch/backend/scheduler/
+ADD frontend/*                /efsearch/frontend/
+ADD frontend/custom/*         /efsearch/frontend/custom/
+ADD frontend/languages/*      /efsearch/frontend/languages/
+ADD frontend/res/*            /efsearch/frontend/res/
+ADD frontend/res/css/*        /efsearch/frontend/res/css/
+ADD frontend/res/img/*        /efsearch/frontend/res/img/
+ADD frontend/res/img/smiles/* /efsearch/frontend/res/img/smiles/
 
 WORKDIR /efsearch

@@ -10,7 +10,7 @@ if [[ ! -z $1 ]]; then
     elif [[ "$1" == "fetcher" ]]; then
         exec python3 -m backend.fetcher.fetcher
     elif [[ "$1" == "frontend" ]]; then
-        exec python3 frontend/wsgi.py
+        exec gunicorn -w 4 --bind=0.0.0.0:8000 frontend.efsearch
     fi
 fi
 

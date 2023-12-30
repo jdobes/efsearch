@@ -1,6 +1,7 @@
 import json
 from urllib.parse import quote
 
+
 class Localizer:
     def __init__(self, lang):
         filename = "frontend/languages/" + lang + ".json"
