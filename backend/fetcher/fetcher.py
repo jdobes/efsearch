@@ -199,7 +199,7 @@ async def sync_page(page_category, ef_id):
         page_url = f"{EF_BASE_URL}{URL_PREFIX[page_category]}{ef_id}{FORUM_SUFIX}"
         tries = 0
         html = None
-        for i in range(4):
+        for _ in range(4):
             try:
                 async with SESSION.get(page_url) as response:
                     if response.status == 200:
@@ -207,11 +207,14 @@ async def sync_page(page_category, ef_id):
                         html = await response.text(errors="ignore")
                     else:
                         LOGGER.warning(f"Unable to fetch page: {page_category}/{ef_id} - HTTP {response.status}")
+                        await update_last_sync(page_category, ef_id)
                     break
             except aiohttp.client_exceptions.ServerDisconnectedError:
                 tries += 1
                 if tries >= 4:
-                    raise
+                    LOGGER.warning(f"Unable to fetch page: {page_category}/{ef_id} - Server error")
+                    await update_last_sync(page_category, ef_id)
+                    break
                 else:
                     LOGGER.warning(f"Retrying fetch of page: {page_category}/{ef_id}")
             except aiohttp.client_exceptions.TooManyRedirects:  # Some pages have this issue, e.g. article/531971
