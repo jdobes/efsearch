@@ -57,8 +57,11 @@ def parse_page(page, page_category, ef_id):
     article = page.find('main')
     forum = article.find('div', attrs={'class': 'l-comments-list'})
     # Page exists
-    if article and forum:
-        data['name'] = article.h1.text
+    if forum:
+        title = page.title.text.replace(' - Eurofotbal.cz', '').strip()
+        if page_category == 'match':
+            title = title.replace(': statistiky, reportáž', '')
+        data['name'] = title
         # FIXME: ignore created timestamp of pages for now, difficult to parse in the new UI and it's not used anyway
         data['created'] = "01.01.1970 00:00"
         data['forum'] = []
