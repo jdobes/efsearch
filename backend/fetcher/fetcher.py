@@ -214,6 +214,9 @@ async def sync_page(page_category, ef_id):
                     raise
                 else:
                     LOGGER.warning(f"Retrying fetch of page: {page_category}/{ef_id}")
+            except aiohttp.client_exceptions.TooManyRedirects:  # Some pages have this issue, e.g. article/531971
+                LOGGER.warning(f"Too many redirects of page: {page_category}/{ef_id}")
+                break
         if html:
             page = BeautifulSoup(html, 'lxml')
             data = parse_page(page, page_category, ef_id)
