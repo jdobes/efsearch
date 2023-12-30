@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
-from flask import request
 from datetime import datetime
+
+from flask import request
+from peewee import DoesNotExist
 from urllib.parse import quote
 
 from frontend.localizer import Localizer
@@ -371,7 +373,10 @@ $(document).ready(function()
         if self.search or self.search_from or self.search_to:
             count = posts.count()
         else:
-            count = Postcache.get(Postcache.name == self.author).count
+            try:
+                count = Postcache.get(Postcache.name == self.author).count
+            except DoesNotExist:  # New user, cache was not re-generated yet
+                count = posts.count()
 
         if count <= 0:
             forum += """<div style="text-align: center"><b>%(not-found)s</b><br/><img src="/res/img/wrong.png"></div>""" % self.localizer.getDictionary()
