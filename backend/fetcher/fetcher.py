@@ -1,10 +1,8 @@
 import asyncio
 from datetime import datetime
 import json
-import logging
 import re
 import signal
-import time
 
 import aiohttp
 import asyncpg
@@ -24,13 +22,14 @@ RUNTIME = {}
 
 URL_PREFIX = {"article": "/clanky/-", "match": "/serie-a/reportaz/-"}
 FORUM_SUFIX = "/?forum=1"
-ARTICLE_CLASS_NAME = {"article": "article", "match": "matchmain"}
 PAGE_TYPE_TO_ID = {}
 ACCOUNT_ID_TO_DB_ID = {}
 
 DATETIME_FORMAT = "%d.%m.%Y %H:%M"
 
+RE_COMPILE_SMILE = re.compile(r'<img class="smile" src="/res/img/emojis/([^<>]+)\.[^<>]+/>')
 RE_COMPILE_URL = re.compile(r'<a [^<]+>([^<]+)</a>')
+
 
 async def terminate(_, loop):
     """Trigger shutdown."""
@@ -42,66 +41,69 @@ async def terminate(_, loop):
 
 
 def preprocess_text(text):
-    text = text.replace('<img class="smile" src="/res/img/smiles/biggrin.gif"/>', "::biggrin::")
-    text = text.replace('<img class="smile" src="/res/img/smiles/confused.gif"/>', "::confused::")
-    text = text.replace('<img class="smile" src="/res/img/smiles/cool.gif"/>', "::cool::")
-    text = text.replace('<img class="smile" src="/res/img/smiles/cry.gif"/>', "::cry::")
-    text = text.replace('<img class="smile" src="/res/img/smiles/eek.gif"/>', "::eek::")
-    text = text.replace('<img class="smile" src="/res/img/smiles/evil.gif"/>', "::evil::")
-    text = text.replace('<img class="smile" src="/res/img/smiles/frown.gif"/>', "::frown::")
-    text = text.replace('<img class="smile" src="/res/img/smiles/lol.gif"/>', "::lol::")
-    text = text.replace('<img class="smile" src="/res/img/smiles/mad.gif"/>', "::mad::")
-    text = text.replace('<img class="smile" src="/res/img/smiles/neutral.gif"/>', "::neutral::")
-    text = text.replace('<img class="smile" src="/res/img/smiles/razz.gif"/>', "::razz::")
-    text = text.replace('<img class="smile" src="/res/img/smiles/redface.gif"/>', "::redface::")
-    text = text.replace('<img class="smile" src="/res/img/smiles/rolleyes.gif"/>', "::rolleyes::")
-    text = text.replace('<img class="smile" src="/res/img/smiles/smile.gif"/>', "::smile::")
-    text = text.replace('<img class="smile" src="/res/img/smiles/wink.gif"/>', "::wink::")
-    text = text.replace('<img class="smile" src="/res/img/smiles/talking.gif"/>', "::talking::")
-    text = text.replace('<img class="smile" src="/res/img/smiles/spew.gif"/>', "::spew::")
-    text = text.replace('<img class="smile" src="/res/img/smiles/facepalm.gif"/>', "::facepalm::")
-    text = text.replace('<img class="smile" src="/res/img/smiles/thumbsup.gif"/>', "::thumbsup::")
-    text = text.replace('<img class="smile" src="/res/img/smiles/thumbsdown.gif"/>', "::thumbsdown::")
-    text = text.replace('<br/>', "\n")
-    text = RE_COMPILE_URL.sub(r'\1', text)
-    return text
+    paragraphs = []
+    for paragraph in text.findAll('p'):
+        paragraph = paragraph.decode_contents()
+        paragraph = RE_COMPILE_SMILE.sub(r'::\1::', paragraph)
+        paragraph = RE_COMPILE_URL.sub(r'\1', paragraph)
+        paragraph = paragraph.strip()
+        paragraphs.append(paragraph)
+
+    return "\n".join(paragraphs)
 
 
 def parse_page(page, page_category, ef_id):
     data = {}
-    article = page.find('div', attrs={'class': ARTICLE_CLASS_NAME[page_category]})
-    forum = page.find('div', attrs={'class': 'forum'})
+    article = page.find('main')
+    forum = article.find('div', attrs={'class': 'l-comments-list'})
     # Page exists
     if article and forum:
-        data['name'] = article.h2.text
-        data['created'] = article.find('div', attrs={'class': 'date'}).text[0:16]
-        # Check date format
-        data['created'] = data['created'].replace('CET', '').replace('?', '00:00').strip()
-        if data['created'] == "00.00.0000 00:00":
-            data['created'] = "01.01.1970 00:00"
-
+        data['name'] = article.h1.text
+        # FIXME: ignore created timestamp of pages for now, difficult to parse in the new UI and it's not used anyway
+        data['created'] = "01.01.1970 00:00"
         data['forum'] = []
-        for post in forum.findAll('div', attrs={'class': 'post'}):
+
+        parent_stack = []
+        current_depth = 0
+        previous_post_id = None
+        for post in forum.findAll('div', attrs={'class': 'l-comments-comment'}):
+            # Manage post stack in this block to identify parent posts
+            post_id = int(post.get('id')[4:])
+            post_depth = int(post.get('data-depth'))
+            if post_depth > current_depth:
+                parent_stack.append(previous_post_id)
+                current_depth = post_depth
+            elif post_depth < current_depth:
+                diff = current_depth - post_depth
+                for _ in range(diff):
+                    parent_stack.pop()
+                current_depth = post_depth
+            if parent_stack:
+                parent_id = parent_stack[-1]
+            else:
+                parent_id = None
+            previous_post_id = post_id
+            LOGGER.debug(f"depth={current_depth}, id={post_id}, parent={parent_id}")
+
             comment = {}
-            comment['id'] = int(post.get('id')[1:])
+            comment['id'] = post_id
+            comment['parent_id'] = parent_id
 
-            parent = None
-            parent_link = post.find('div', attrs={'class': 'parentlink'})
-            if parent_link:
-                parent = int(parent_link.a['onclick'].rsplit('(', 1)[1][:-2])
-            comment['parent_id'] = parent
+            inner_post = post.find('div', attrs={'class': 'l-comments-comment__inner'})
 
-            user_link = post.find('a', attrs={'class': 'name'})
+            user_info = inner_post.find('div', attrs={'class': 'l-comments-comment-header__user'})
             # User must be registered
-            if user_link and user_link.text:
-                comment['account_id'] = int(user_link.get('onclick').split()[1][:-1])
-                comment['account'] = user_link.text
+            if user_info:
+                user_link = user_info['data-popover-url']
+                comment['account_id'] = int(user_link.split('uid=')[1])
+                comment['account'] = user_info.text.strip()
             else:
                 comment['account_id'] = 0
                 comment['account'] = ""
-            comment['created'] = post.find('div', attrs={'class': 'time'}).text
-            # Check date format
-            comment['body'] = preprocess_text(post.find('div', attrs={'class': 'text'}).decode_contents())
+            created_date = inner_post.find('span', attrs={'class': 'l-comments-comment-header__date-date'}).text
+            created_time = inner_post.find('span', attrs={'class': 'l-comments-comment-header__date-time'}).text
+            comment['created'] = f"{created_date} {created_time}"
+            comment['body'] = preprocess_text(inner_post.find('div', attrs={'class': 'l-comments-comment__content'}))
 
             data['forum'].append(comment)
     else:
@@ -154,7 +156,7 @@ async def store_page(data, page_category, ef_id):
             rows = await conn.fetch("SELECT ef_id from post WHERE page_id = $1", page_id)
             for row in rows:
                 existing_ef_ids.add(row["ef_id"])
-            
+
             # handle accounts
             missing_accounts = set()
             for comment in data["forum"]:
@@ -186,7 +188,7 @@ async def store_page(data, page_category, ef_id):
 
                 await conn.execute("SELECT update_funny_ranking($1)", page_id)
 
-        LOGGER.info(f"Stored page: {page_category}/{ef_id} - {len(missing_comments)} missing comments")
+        LOGGER.info(f"Stored page: {page_category}/{ef_id} - {len(missing_comments)} missing comment(s)")
 
 
 async def sync_page(page_category, ef_id):
@@ -198,7 +200,7 @@ async def sync_page(page_category, ef_id):
             try:
                 async with SESSION.get(page_url) as response:
                     if response.status == 200:
-                        LOGGER.info(f"Fetched page: {page_category}/{ef_id} - HTTP {response.status}")
+                        LOGGER.debug(f"Fetched page: {page_category}/{ef_id} - HTTP {response.status}")
                         html = await response.text(errors="ignore")
                     else:
                         LOGGER.warning(f"Unable to fetch page: {page_category}/{ef_id} - HTTP {response.status}")
