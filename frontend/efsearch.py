@@ -18,7 +18,7 @@ from frontend.page_search import PageSearch
 
 @application.route("/", methods=['GET'])
 def root():
-    db.connect()
+    db.connect(reuse_if_open=True)
     page = PageSearch()
     html = page.getHTML()
     db.close()
