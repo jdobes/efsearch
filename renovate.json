@@ -3,7 +3,6 @@
   "extends": [
     "config:recommended"
   ],
-  "timezone": "Europe/Prague",
   "packageRules": [
     {
       "matchCategories": ["docker", "ci"],
@@ -12,7 +11,7 @@
       "pinDigests": true,
       "automerge": true,
       "automergeStrategy": "rebase",
-      "automergeType": "pr",
+      "automergeType": "pr"
     },
     {
         "matchManagers": ["docker-compose"],
