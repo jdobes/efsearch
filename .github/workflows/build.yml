@@ -23,7 +23,7 @@ jobs:
       PACKAGE_NAME: efsearch
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Install qemu-user-static for multi-arch build
