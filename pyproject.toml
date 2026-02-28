@@ -1,0 +1,8 @@
+[project]
+name = "efsearch"
+version = "1.0.0"
+readme = "README.md"
+
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+commit_author = "semantic-release <semantic-release>"
