@@ -5,7 +5,7 @@ asyncpg
 beautifulsoup4
 flask
 gunicorn
-lxml==4.9.4
+lxml==6.0.2
 peewee
 psycopg2-binary
 tzdata
