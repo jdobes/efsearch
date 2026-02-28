@@ -1,6 +1,6 @@
 aiohttp
 apscheduler
-asyncio-nats-client
+nats-py
 asyncpg
 beautifulsoup4
 flask

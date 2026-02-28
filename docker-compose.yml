@@ -1,14 +1,13 @@
-version: "3.7"
 services:
   efs-db:
-    image: postgres:13
+    image: postgres:18
     container_name: efs-db
     env_file:
       - ./docker-compose.env
     volumes:
-      - db:/var/lib/postgresql/data
+      - db:/var/lib/postgresql
   efs-nats:
-    image: nats:2.1.8
+    image: nats:2.12.4
     container_name: efs-nats
   efs-db-admin:
     command: /efsearch/entrypoint.sh db-admin

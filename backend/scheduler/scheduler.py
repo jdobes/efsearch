@@ -16,7 +16,6 @@ from backend.common.logging import init_logging, get_logger
 LOGGER = get_logger(__name__)
 
 NC = Client()
-SESSION = aiohttp.ClientSession()
 RUNTIME = {}
 
 PAGE_TYPE_TO_ID = {}
@@ -26,9 +25,9 @@ ID_TO_PAGE_TYPE = {}
 async def terminate(_, loop):
     """Trigger shutdown."""
     LOGGER.info("Signal received, stopping.")
-    await SESSION.close()
+    await NC.close()
+    await RUNTIME["aiohttp"].close()
     await RUNTIME["db_pool"].close()
-    await NC.drain()
     loop.stop()
 
 
@@ -42,7 +41,7 @@ async def prepare_page_type_to_id_cache():
 
 async def login():
     payload = {'login': EF_USER, 'pass': EF_PASSWORD}
-    async with SESSION.post(EF_LOGIN_URL, data=payload) as response:
+    async with RUNTIME["aiohttp"].post(EF_LOGIN_URL, data=payload) as response:
         LOGGER.info(f"Login as {EF_USER}:{EF_PASSWORD} - HTTP {response.status}")
 
 
@@ -50,12 +49,12 @@ async def get_top_ids_web():
     """Get and return current last id of article"""
     page_url = f"{EF_BASE_URL}"
     result = {}
-    async with SESSION.get(page_url) as response:
+    async with RUNTIME["aiohttp"].get(page_url) as response:
         if response.status == 200:
             LOGGER.info(f"Fetched page: {page_url} - HTTP {response.status}")
             html = await response.text()
             page = BeautifulSoup(html, 'lxml')
-            links = page.findAll('a')
+            links = page.find_all('a')
             ids = {"article": [], "match": []}
             for link in links:
                 page_category = None
@@ -137,26 +136,27 @@ async def refresh_post_cache():
     LOGGER.info("Materialized view post_cache refreshed")
 
 
-async def init(loop):
+async def init():
     RUNTIME["db_pool"] = await asyncpg.create_pool(f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}/{POSTGRES_DB}",
                                                    min_size=2, max_size=2)
+    RUNTIME["aiohttp"] = aiohttp.ClientSession()
     await prepare_page_type_to_id_cache()
-    await NC.connect(servers=[NATS_HOST], loop=loop)
+    await NC.connect(servers=[NATS_HOST])
 
 
 def main():
     init_logging()
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
 
     signals = (signal.SIGHUP, signal.SIGTERM, signal.SIGINT)
     for sig in signals:
         loop.add_signal_handler(
             sig, lambda sig=sig: loop.create_task(terminate(sig, loop)))
 
-    loop.run_until_complete(init(loop))
+    loop.run_until_complete(init())
     loop.run_until_complete(queue_unsynced_pages())
 
-    scheduler = AsyncIOScheduler()
+    scheduler = AsyncIOScheduler(event_loop=loop)
     scheduler.add_job(queue_new_pages, "interval", seconds=QUEUE_NEW_PAGES_INTERVAL, next_run_time=datetime.now())
     scheduler.add_job(refresh_post_cache, "interval", seconds=REFRESH_POST_CACHE_INTERVAL, next_run_time=datetime.now())
     scheduler.start()

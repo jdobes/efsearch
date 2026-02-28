@@ -20,7 +20,7 @@ async def terminate(_, loop):
 
 
 async def run(loop, page_category, ef_id):
-    await NC.connect(servers=[NATS_HOST], loop=loop)
+    await NC.connect(servers=[NATS_HOST])
     chunk = [{"page_category": page_category, "ef_id": ef_id}]
     await NC.publish(NATS_PAGES_TOPIC, json.dumps(chunk).encode())
     LOGGER.info("Published.")

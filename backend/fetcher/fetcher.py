@@ -16,7 +16,6 @@ from backend.common.logging import init_logging, get_logger
 LOGGER = get_logger(__name__)
 
 NC = Client()
-SESSION = aiohttp.ClientSession()
 SEMAPHORE = asyncio.Semaphore(FETCHER_TASKS)
 RUNTIME = {}
 
@@ -34,15 +33,17 @@ RE_COMPILE_URL = re.compile(r'<a [^<]+>([^<]+)</a>')
 async def terminate(_, loop):
     """Trigger shutdown."""
     LOGGER.info("Signal received, stopping.")
-    await SESSION.close()
+    await NC.close()
+    LOGGER.info("%s tasks haven't finished yet.", len(RUNTIME["tasks"]))
+    await asyncio.gather(*RUNTIME["tasks"])
+    await RUNTIME["aiohttp"].close()
     await RUNTIME["db_pool"].close()
-    await NC.drain()
     loop.stop()
 
 
 def preprocess_text(text):
     paragraphs = []
-    for paragraph in text.findAll('p'):
+    for paragraph in text.find_all('p'):
         paragraph = paragraph.decode_contents()
         paragraph = RE_COMPILE_SMILE.sub(r'::\1::', paragraph)
         paragraph = RE_COMPILE_URL.sub(r'\1', paragraph)
@@ -69,7 +70,7 @@ def parse_page(page, page_category, ef_id):
         parent_stack = []
         current_depth = 0
         previous_post_id = None
-        for post in forum.findAll('div', attrs={'class': 'l-comments-comment'}):
+        for post in forum.find_all('div', attrs={'class': 'l-comments-comment'}):
             # Manage post stack in this block to identify parent posts
             post_id = int(post.get('id')[4:])
             post_depth = int(post.get('data-depth'))
@@ -195,39 +196,41 @@ async def store_page(data, page_category, ef_id):
 
 
 async def sync_page(page_category, ef_id):
-    async with SEMAPHORE:
-        page_url = f"{EF_BASE_URL}{URL_PREFIX[page_category]}{ef_id}{FORUM_SUFIX}"
-        tries = 0
-        html = None
-        for _ in range(4):
-            try:
-                async with SESSION.get(page_url) as response:
-                    if response.status == 200:
-                        LOGGER.debug(f"Fetched page: {page_category}/{ef_id} - HTTP {response.status}")
-                        html = await response.text(errors="ignore")
-                    else:
-                        LOGGER.warning(f"Unable to fetch page: {page_category}/{ef_id} - HTTP {response.status}")
-                        await update_last_sync(page_category, ef_id)
-                    break
-            except aiohttp.client_exceptions.ServerDisconnectedError:
-                tries += 1
-                if tries >= 4:
-                    LOGGER.warning(f"Unable to fetch page: {page_category}/{ef_id} - Server error")
-                    await update_last_sync(page_category, ef_id)
-                    break
+    page_url = f"{EF_BASE_URL}{URL_PREFIX[page_category]}{ef_id}{FORUM_SUFIX}"
+    tries = 0
+    html = None
+    for _ in range(4):
+        try:
+            async with RUNTIME["aiohttp"].get(page_url) as response:
+                if response.status == 200:
+                    LOGGER.debug(f"Fetched page: {page_category}/{ef_id} - HTTP {response.status}")
+                    html = await response.text(errors="ignore")
                 else:
-                    LOGGER.warning(f"Retrying fetch of page: {page_category}/{ef_id}")
-            except aiohttp.client_exceptions.TooManyRedirects:  # Some pages have this issue, e.g. article/531971
-                LOGGER.warning(f"Too many redirects of page: {page_category}/{ef_id}")
+                    LOGGER.warning(f"Unable to fetch page: {page_category}/{ef_id} - HTTP {response.status}")
+                    await update_last_sync(page_category, ef_id)
+                break
+        except aiohttp.client_exceptions.ServerDisconnectedError:
+            tries += 1
+            if tries >= 4:
+                LOGGER.warning(f"Unable to fetch page: {page_category}/{ef_id} - Server error")
                 await update_last_sync(page_category, ef_id)
                 break
-        if html:
-            page = BeautifulSoup(html, 'lxml')
-            data = parse_page(page, page_category, ef_id)
-            if data:
-                await store_page(data, page_category, ef_id)
             else:
-                await update_last_sync(page_category, ef_id)
+                LOGGER.warning(f"Retrying fetch of page: {page_category}/{ef_id}")
+        except aiohttp.client_exceptions.TooManyRedirects:  # Some pages have this issue, e.g. article/531971
+            LOGGER.warning(f"Too many redirects of page: {page_category}/{ef_id}")
+            await update_last_sync(page_category, ef_id)
+            break
+        except aiohttp.client_exceptions.ClientConnectionError:
+            LOGGER.warning(f"Unable to fetch page: {page_category}/{ef_id} - Client connection error")
+            break
+    if html:
+        page = BeautifulSoup(html, 'lxml')
+        data = parse_page(page, page_category, ef_id)
+        if data:
+            await store_page(data, page_category, ef_id)
+        else:
+            await update_last_sync(page_category, ef_id)
 
 
 async def prepare_page_type_to_id_cache():
@@ -247,31 +250,36 @@ async def prepare_account_id_cache():
 async def message_handler(msg):
     pages = json.loads(msg.data.decode())
     for page in pages:
-        async with SEMAPHORE:
-            asyncio.get_event_loop().create_task(sync_page(page["page_category"], int(page["ef_id"])))
-            LOGGER.debug(f"Task for page created: {page}")
+        await SEMAPHORE.acquire()
+        task = asyncio.get_event_loop().create_task(sync_page(page["page_category"], int(page["ef_id"])))
+        RUNTIME["tasks"].add(task)
+        task.add_done_callback(lambda x: RUNTIME["tasks"].remove(x))
+        task.add_done_callback(lambda x: SEMAPHORE.release())
+        LOGGER.debug(f"Task for page created: {page}")
 
 
-async def run(loop):
+async def run():
     RUNTIME["db_pool"] = await asyncpg.create_pool(f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}/{POSTGRES_DB}",
                                                    min_size=FETCHER_TASKS*2, max_size=FETCHER_TASKS*2)
+    RUNTIME["aiohttp"] = aiohttp.ClientSession()
+    RUNTIME["tasks"] = set()
     await prepare_page_type_to_id_cache()
     await prepare_account_id_cache()
-    await NC.connect(servers=[NATS_HOST], loop=loop)
+    await NC.connect(servers=[NATS_HOST])
     await NC.subscribe(NATS_PAGES_TOPIC, cb=message_handler)
     LOGGER.info(f"Connected to {NATS_HOST}, listening on {NATS_PAGES_TOPIC} topic...")
 
 
 def main():
     init_logging()
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
 
     signals = (signal.SIGHUP, signal.SIGTERM, signal.SIGINT)
     for sig in signals:
         loop.add_signal_handler(
             sig, lambda sig=sig: loop.create_task(terminate(sig, loop)))
 
-    loop.run_until_complete(run(loop))
+    loop.run_until_complete(run())
     loop.run_forever()
     loop.close()
     LOGGER.info("Stopped.")
