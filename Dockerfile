@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi10/ubi-minimal:10.2-1779862102@sha256:7dc60d7777e010c50f5e041ff069112b379c3d5eef2823d20871c67cf663f10c
+FROM registry.access.redhat.com/ubi10/ubi-minimal:10.2-1780413072@sha256:39c5de8723ad21c6a34e15cfba75f096d6a7191de98481b870b3dba575d65302
 
 ENV TZ=UTC
 
