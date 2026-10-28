@@ -26,9 +26,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-      - name: Install qemu-user-static for multi-arch build
+      - name: Install qemu-user-binfmt-hwe for multi-arch build
         run: |
-          sudo apt update && sudo apt install -y qemu-user-static
+          sudo apt update && sudo apt install -y qemu-user-binfmt-hwe
       - name: Build latest version
         run: |
           podman build --platform "$PLATFORM" --squash --manifest new_image .
